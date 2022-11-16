@@ -113,9 +113,9 @@ namespace ExpressionTree
                 ParameterExpression parameterExpression = Expression.Parameter(typeof(Person), "p");
                 //2.p.id，调用p.的属性---Person的属性id,先获取属性
                 //a.获取属性--反射 
-                FieldInfo fieldId = typeof(Person).GetField("Id")!; //id
+                var propertyId = typeof(Person).GetProperty("Id")!; //id
                 //b.p.Id  通过parameterExpression来获取 调用Id
-                MemberExpression idExp = Expression.Field(parameterExpression, fieldId);
+                MemberExpression idExp = Expression.Property(parameterExpression, propertyId);
                 ConstantExpression constant10 = Expression.Constant(10, typeof(int));
                 //p.id==10;
                 Expression expressionExp = Expression.Equal(idExp, constant10);
@@ -127,13 +127,58 @@ namespace ExpressionTree
                 Func<Person, bool> func1 = predicate1.Compile();
                 bool bResult1 = func1.Invoke(new Person()
                 {
-                    Id = 10
+                    Id = 11
                 });
                 Console.WriteLine(bResult1);
             }
             {
-                // 拼接多个条件
+                // 拼接多个条件 --从右往左拼
+                Expression<Func<Person, bool>> predicate = p =>
+                p.Id.ToString() == "11"
+                && p.Name.Equals("Person")
+                && p.Age > 18;
 
+                // 1.p.Age > 18;
+                ParameterExpression parameterExpression = Expression.Parameter(typeof(Person), "p");
+                var age = typeof(Person).GetProperty("Age")!;
+                MemberExpression ageExpression = Expression.Property(parameterExpression, age);
+                ConstantExpression constant18 = Expression.Constant(10, typeof(int));
+                var greateThanExp = Expression.GreaterThan(ageExpression, constant18);
+
+                // p.Name.Equals("Person")
+                ConstantExpression constantrichard = Expression.Constant("Person",typeof(string));
+                PropertyInfo name = typeof(Person).GetProperty("Name")!;
+                var nameExpression = Expression.Property(parameterExpression, name);
+                MethodInfo equals = typeof(string).GetMethod("Equals", new Type[] { typeof(string) })!; //todo
+                var callEqualsExpression = Expression.Call(nameExpression, equals, constantrichard);
+
+                // p.Id.ToString() == "11"
+                ConstantExpression constantExpression10 = Expression.Constant("11", typeof(string));
+                PropertyInfo propertyId = typeof(Person).GetProperty("Name")!;
+                var idExpression = Expression.Property(parameterExpression, propertyId);
+
+                MethodInfo toString = typeof(int).GetMethod("ToString", new Type[0])!;
+
+                var toStringExp = Expression.Call(idExpression, toString, Array.Empty<Expression>());
+
+                var idEqual = Expression.Equal(toStringExp, constantExpression10);
+
+                var and1 = Expression.AndAlso(idEqual, callEqualsExpression);
+                var and2 = Expression.AndAlso(and1, greateThanExp);
+
+                Expression<Func<Person, bool>> predicate1 = Expression.Lambda<Func<Person, bool>>(and2, new ParameterExpression[]
+                {
+                     parameterExpression
+                });
+
+                Func<Person, bool> func1 = predicate1.Compile();
+
+                bool bResult1 = func1.Invoke(new Person()
+                {
+                    Id = 11,
+                    Name = "Person",
+                    Age = 20
+                });
             }
 
             #endregion
