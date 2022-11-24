@@ -3,6 +3,13 @@ using ExpressionTree;
 
 Console.WriteLine("Hello, World!");
 
-ExpressionExample.ExpressionTest();
+// 表达式目录树基本使用
+//ExpressionExample.ExpressionTest();
+
+// 实体之间映射 扩展使用,实体之间的Mapper
+//ExpressionExample.ExpressionMapper();
+
+// 访问,解析表达式目录树
+ExpressionVisitorExample.ExpressionVisitorTest();
 
 Console.ReadKey();

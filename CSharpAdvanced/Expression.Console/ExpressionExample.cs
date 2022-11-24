@@ -146,7 +146,7 @@ namespace ExpressionTree
                 var greateThanExp = Expression.GreaterThan(ageExpression, constant18);
 
                 // p.Name.Equals("Person")
-                ConstantExpression constantrichard = Expression.Constant("Person",typeof(string));
+                ConstantExpression constantrichard = Expression.Constant("Person", typeof(string));
                 PropertyInfo name = typeof(Person).GetProperty("Name")!;
                 var nameExpression = Expression.Property(parameterExpression, name);
                 MethodInfo equals = typeof(string).GetMethod("Equals", new Type[] { typeof(string) })!; //todo
@@ -182,6 +182,150 @@ namespace ExpressionTree
             }
 
             #endregion
+
+
+            {
+                // 目的动态拼接条件,灵活编程
+
+                ////SELECT* FROM USER WHERE   name like ""  and  age=10; 
+                //// 数据库查询-----拼接Sql语句；
+                ////以前根据用户输入拼装条件
+                //string sql = "SELECT * FROM USER WHERE 1=1";
+                //Console.WriteLine("用户输入个名称，为空就跳过");
+                //string name = Console.ReadLine();
+                //if (!string.IsNullOrWhiteSpace(name))
+                //{
+                //    sql += $" and name like '%{name}%'";
+                //}
+                //Console.WriteLine("用户输入个账号，为空就跳过");
+                //string account = Console.ReadLine();
+                //if (!string.IsNullOrWhiteSpace(account))
+                //{
+                //    sql += $" and account like '%{account}%'";
+                //}
+            }
+
+            {
+                // Linq查询，拼接表达式目录树，解析表达式目录树转换成sql语句到数据库中执行
+
+                var dbSet = new List<Person>().AsQueryable();
+                var result = dbSet.Where(p => p.Age == 25 && p.Name.Contains("Person"));
+                //Expression<Func<Person, bool>> predicate = p => p.Age == 25 && p.Name.Contains("Person"); 
+                Expression<Func<Person, bool>>? exp = null;
+                Console.WriteLine("用户输入个名称，为空就跳过");
+                string? name = Console.ReadLine();
+                if (!string.IsNullOrWhiteSpace(name))
+                {
+                    exp = p => p.Name.Contains(name);
+                }
+                Console.WriteLine("用户输入个最小年纪，为空就跳过");
+                string? age = Console.ReadLine();
+                if (!string.IsNullOrWhiteSpace(age) && int.TryParse(age, out int iAge))
+                {
+                    exp = p => p.Age > iAge;
+                }
+            }
+        }
+
+        public static void ExpressionMapper()
+        {
+            // Person 转换到 PersonDto
+            // 1.硬编码 2.反射 3.可以直接new一个对象 4.序列化 5.类库(AutoMapper)
+
+            {
+                // 1.硬编码 new一个新对象  优点: 性能好，缺点:不灵活
+                Person person = new Person()
+                {
+                    Id = 1,
+                    Name = "Person",
+                    Age = 18
+                };
+                PersonDto dto = new PersonDto()
+                {
+                    Id = person.Id,
+                    Name = person.Name,
+                    Age = person.Age
+                };
+
+            }
+            {
+                // 2.反射 灵活 性能不好
+                Person person = new Person()
+                {
+                    Id = 1,
+                    Name = "Person",
+                    Age = 18
+                };
+                PersonDto dto =  ReflectionMapper.Mapping<Person, PersonDto>(person);
+            }
+
+            {
+                // 3. 序列化 反序列化 灵活 性能不好
+                Person person = new Person()
+                {
+                    Id = 1,
+                    Name = "Person",
+                    Age = 18
+                };
+                PersonDto? dto = SerializeMapper.Mapping<Person, PersonDto>(person);
+            }
+
+            {
+                // 4. 表达式目录树拼装硬编码 --普通缓存
+                Person person = new Person()
+                {
+                    Id = 1,
+                    Name = "Person",
+                    Age = 18
+                };
+                var dto = ExpressionDictMapper.Mapping<Person, PersonDto>(person);
+            }
+
+            {
+                // 5. 表达式目录树拼装硬编码  --泛型缓存
+                Person person = new Person()
+                {
+                    Id = 1,
+                    Name = "Person",
+                    Age = 18
+                };
+
+                var dto = ExpressionGenericMapper<Person, PersonDto>.Mapping(person);
+            }
+
+            {
+                Person person = new Person()
+                {
+                    Id = 1,
+                    Name = "Person",
+                    Age = 18
+                };
+                // 普通委托
+                Func<Person, PersonDto> func = DelegateMapping;
+                var dto = func(person);
+
+                var func2 = (Person p) => new PersonDto()
+                {
+                    Id=p.Id,
+                    Name=p.Name,
+                    Age=p.Age
+                };
+
+                var s = func2(person);
+            }
+
+        }
+
+        public static PersonDto DelegateMapping(Person person)
+        {
+            PersonDto dto = new PersonDto()
+            {
+                Id = person.Id,
+                Name = person.Name,
+                Age = person.Age,
+            };
+
+            return dto;
 
         }
     }
