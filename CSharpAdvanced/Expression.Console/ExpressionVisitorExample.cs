@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
+using ExpressionTree.Extension;
 
 namespace ExpressionTree
 {
@@ -48,7 +49,7 @@ namespace ExpressionTree
 
                 Console.WriteLine(expression.ToString());
 
-                ConditionBuilderVisitor visitor =new ConditionBuilderVisitor();
+                ConditionBuilderVisitor visitor = new ConditionBuilderVisitor();
 
                 visitor.Visit(expression);
 
@@ -75,6 +76,119 @@ namespace ExpressionTree
                 vistor.Visit(lambda);
                 Console.WriteLine(vistor.Condition());
             }
+
+            // 表达式拼接
+            {
+                Expression<Func<Person, bool>> expression1 = x => x.Age > 5;
+                Expression<Func<Person, bool>> expression2 = x => x.Id > 5;
+
+                Expression<Func<Person, bool>> expression3 = expression1.And<Person>(expression2);
+                Expression<Func<Person, bool>> expression4 = expression1.Or<Person>(expression2);
+                Expression<Func<Person, bool>> expression5 = expression1.Not<Person>();
+
+
+                Console.WriteLine("表达式拼接===========================================");
+                var list2 = Do2(expression1);
+                foreach (var item in list2)
+                {
+                    Console.WriteLine(item.Id);
+                }
+
+                Console.WriteLine("转换委托===========================================");
+                var list1 = Do1(expression1.Compile());
+                //Do1(lambda5);
+            }
+
+
+            {
+                // 根据条件是否正确 拼接表达式
+                //Expression<Func<Person, bool>>? expression = null;
+
+                //string str = "ce";
+                //Expression<Func<Person, bool>> lambda = x => x.Age > 5 && x.Name == str || x.Id > 5;
+                //Expression<Func<Person, bool>> lambda2 = x => x.Age > 5 && x.Name == "ce" || x.Id > 5;
+                //Console.WriteLine("输入名称，为空则跳过");
+
+                //string? name = Console.ReadLine();
+                //if (!string.IsNullOrEmpty(name))
+                //{
+                //    expression = expression!.And(p => p.Name.Contains(name));
+                //}
+
+                //Console.WriteLine("用户输入个创建人Id，为空就跳过");
+
+                //string? id = Console.ReadLine();
+
+                //if (!string.IsNullOrWhiteSpace(id) && int.TryParse(id, out int cId))
+                //{
+                //    expression = expression.And(p => p.Id == cId); ;
+                //}
+
+                //SqlServerHelper sqlServer = new SqlServerHelper();
+                //List<SysCompany> list = sqlServer.Query<SysCompany>(exp);
+            }
+
+            {
+                // AND2
+                //Expression<Func<Person, bool>>? expression = null;
+
+                //Console.WriteLine("输入名称，为空则跳过");
+
+                //string? name = Console.ReadLine();
+                //if (!string.IsNullOrEmpty(name))
+                //{
+                //    expression = expression!.And2(p => p.Name.Contains(name));
+                //}
+
+                //Console.WriteLine("用户输入个创建人Id，为空就跳过");
+
+                //string? id = Console.ReadLine();
+
+                //if (!string.IsNullOrWhiteSpace(id) && int.TryParse(id, out int cId))
+                //{
+                //    expression = expression.And2(p => p.Id == cId); ;
+                //}
+            }
         }
+
+
+        #region private methods
+
+        private static IEnumerable<Person> Do1(Func<Person, bool> func)
+        {
+            List<Person> people = new List<Person>()
+            {
+                new Person(){Id=4,Name="123",Age=4},
+                new Person(){Id=5,Name="234",Age=5},
+                new Person(){Id=6,Name="345",Age=6},
+            };
+            return people.Where(func);
+        }
+
+        private static IEnumerable<Person> Do2(Expression<Func<Person, bool>> expression)
+        {
+            List<Person> people = new List<Person>()
+            {
+                new Person(){Id=4,Name="123",Age=4},
+                new Person(){Id=5,Name="234",Age=5},
+                new Person(){Id=6,Name="345",Age=6},
+            };
+
+           return people.Where(expression.Compile()).ToList();
+        }
+
+        private static IQueryable<Person> GetQueryable(Expression<Func<Person, bool>> func)
+        {
+            List<Person> person = new List<Person>()
+            {
+                new Person(){Id=4,Name="123",Age=4},
+                new Person(){Id=5,Name="234",Age=5},
+                new Person(){Id=6,Name="345",Age=6},
+            };
+
+            return person.AsQueryable<Person>().Where(func);
+        }
+
+        #endregion
     }
 }
